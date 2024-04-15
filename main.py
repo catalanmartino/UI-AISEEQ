@@ -146,8 +146,8 @@ def getChatResponse(user_message, isEmpty):
 zoom_factor = 1.0
 
 client = AzureOpenAI(
-  azure_endpoint = "https://atcp-genai-hackathon-004.openai.azure.com/",
-  api_key= "981fd1c3fc184f4c9b193b47158df9ae",
+  azure_endpoint = "",
+  api_key= "",
   api_version="2024-02-15-preview"
 )
 
