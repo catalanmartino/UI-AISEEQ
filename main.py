@@ -9,8 +9,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from openai import AzureOpenAI
 import os
 from dotenv import load_dotenv
+from speech import text_to_speech
 
 load_dotenv()
+
 
 # Function to send a message
 def send_message(event=None):
@@ -24,6 +26,8 @@ def send_message(event=None):
         chat_box.insert(tk.END, chat_response + "\n", "normal")
         chat_box.config(state=tk.DISABLED)
         entry.delete(0, tk.END)
+        chat_box.update()
+        text_to_speech(chat_response)
 
 
 # Function to update emotion label
@@ -125,6 +129,7 @@ def get_chat_response(user_message, is_empty):
         chat_box.insert(tk.END, "AI: ", "bold")
         chat_box.insert(tk.END, parsed_gpt_response + "\n", "normal")
         chat_box.config(state=tk.DISABLED)
+        # text_to_speech(parsed_gpt_response)
 
     load_message("assistant", parsed_gpt_response)
 
@@ -162,6 +167,7 @@ def load_message(role, message):
             "content": message
         })
     return message_text
+
 
 # Function to update the zoom level indicator
 def update_zoom_indicator():
