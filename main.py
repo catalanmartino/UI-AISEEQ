@@ -8,9 +8,6 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from openai import AzureOpenAI
 
-
-
-
 isEmpty = True
 # Function to send a message
 def send_message(event=None):
@@ -19,8 +16,10 @@ def send_message(event=None):
     chatResponse = getChatResponse(message,isEmpty)
     if message.strip() != "":
         chat_box.config(state=tk.NORMAL)
-        chat_box.insert(tk.END, "You: " + message + "\n")
-        chat_box.insert(tk.END, "AI: " + chatResponse + "\n")
+        chat_box.insert(tk.END, "You: ", "bold")
+        chat_box.insert(tk.END, message + "\n", "normal")
+        chat_box.insert(tk.END, "AI: ", "bold")
+        chat_box.insert(tk.END, chatResponse + "\n", "normal")
         chat_box.config(state=tk.DISABLED)
         entry.delete(0, tk.END)
 
@@ -123,7 +122,8 @@ def getChatResponse(user_message, isEmpty):
             stop=None
         )
         chat_box.config(state=tk.NORMAL)
-        chat_box.insert(tk.END, "AI: " + gpt_response.choices[0].message.content + "\n")
+        chat_box.insert(tk.END, "AI: ", "bold")
+        chat_box.insert(tk.END, gpt_response.choices[0].message.content + "\n", "normal")
         chat_box.config(state=tk.DISABLED)
 
     else:
@@ -251,9 +251,12 @@ chat_frame = tk.Frame(middle_frame, bg="white")
 chat_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=(10, 0))
 
 # Create chat box
+
 chat_box = tk.Text(chat_frame, bg="white", state=tk.DISABLED, wrap=tk.WORD,
                    width=int(window_width * 0.3 / 7))  # Adjust width here
-chat_box.pack(expand=True, fill=tk.BOTH)
+chat_box.tag_configure("bold", font=("Helvetica", 16, "bold"), lmargin1=10, lmargin2=10, rmargin=10, spacing1=5, spacing3=5)
+chat_box.tag_configure("normal", font=("Helvetica", 16), lmargin1=10, lmargin2=10, rmargin=10, spacing1=5, spacing3=5)
+chat_box.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
 # Create entry for typing messages
 entry = tk.Entry(chat_frame, font=("Helvetica", 20))  # Adjust font size here
