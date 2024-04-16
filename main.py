@@ -1,34 +1,37 @@
-import tkinter as tk
-import cv2
+import json
+import os
 import time
-from deepface import DeepFace
+import tkinter as tk
+from tkinter import ttk
 import threading
+import cv2
 from PIL import Image, ImageTk
+from deepface import DeepFace
+from dotenv import load_dotenv
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from openai import AzureOpenAI
-import os
-from dotenv import load_dotenv
+
 from speech import text_to_speech
-import json
 
 load_dotenv()
 
 
 # Function to send a message
 def send_message(event=None):
-    message = entry.get()
-    chat_response = get_chat_response(message, False)
+    message = entry.get(1.0, tk.END)
     if message.strip() != "":
         chat_box.config(state=tk.NORMAL)
         chat_box.insert(tk.END, "You: ", "bold")
         chat_box.insert(tk.END, message + "\n", "normal")
+        entry.delete(1.0, tk.END)
+        entry.update()
+        chat_response = get_chat_response(message, False)
         chat_box.insert(tk.END, "AI: ", "bold")
         chat_box.insert(tk.END, chat_response + "\n", "normal")
         chat_box.config(state=tk.DISABLED)
-        entry.delete(0, tk.END)
         chat_box.update()
-        text_to_speech(chat_response)
+        # text_to_speech(chat_response)
 
 
 # Function to update emotion label
@@ -130,7 +133,8 @@ def get_chat_response(user_message, is_empty):
         chat_box.insert(tk.END, "AI: ", "bold")
         chat_box.insert(tk.END, parsed_gpt_response + "\n", "normal")
         chat_box.config(state=tk.DISABLED)
-        # text_to_speech(parsed_gpt_response)
+        chat_box.update()
+        text_to_speech(parsed_gpt_response)
 
     load_message("assistant", parsed_gpt_response)
 
@@ -151,8 +155,9 @@ client = AzureOpenAI(
 def load_initial_prompt(business_type):
     messages = []
     file = 'coffee.json'
-    if not business_type:
-        file = business_type + ".json"
+    if business_type:
+        business_file_name = business_type.lower().strip().replace(" ", "_")
+        file = business_file_name + ".json"
 
     empty = os.stat(file).st_size == 0
 
@@ -164,7 +169,7 @@ def load_initial_prompt(business_type):
     return messages
 
 
-message_text = load_initial_prompt("coffee")
+message_text = []
 
 
 def load_message(role, message):
@@ -203,6 +208,20 @@ def zoom_out():
     global zoom_factor
     zoom_factor *= 1.0 / 0.8
     update_zoom_indicator()
+
+
+# Start Chat
+def start_chat(business):
+    message_text.clear()
+    entry.delete(1.0, tk.END)
+    entry.update()
+    chat_box.config(state=tk.NORMAL)
+    chat_box.delete(1.0, tk.END)
+    chat_box.config(state=tk.DISABLED)
+    chat_box.update()
+    message = load_initial_prompt(business)
+    message_text.extend(message)
+    get_chat_response("", True)
 
 
 # Create the main window
@@ -270,8 +289,23 @@ emotion_label.pack(padx=2, pady=2, fill=tk.BOTH)
 chat_frame = tk.Frame(middle_frame, bg="white")
 chat_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=(10, 0))
 
-# Create chat box
+# Line of Business selection
+selection_frame = tk.Frame(chat_frame, bg="white")
+selection_frame.pack(padx=10, pady=(10, 0))
 
+business_list = ["Coffee", "Food Truck"]
+selected_business = tk.StringVar()
+selection_of_business = ttk.Combobox(selection_frame, textvariable=selected_business, font=("Helvetica", 14))
+selection_of_business['values'] = business_list
+selection_of_business['state'] = 'readonly'
+selection_of_business.pack(side=tk.LEFT, padx=5, pady=5)
+
+start_button = tk.Button(selection_frame, text="Start",
+                         command=lambda: start_chat(selected_business.get()),
+                         font=("Helvetica", 14))
+start_button.pack(side=tk.LEFT, pady=5, padx=10)
+
+# Create chat box
 chat_box = tk.Text(chat_frame, bg="white", state=tk.DISABLED, wrap=tk.WORD,
                    width=int(window_width * 0.3 / 7))  # Adjust width here
 chat_box.tag_configure("bold", font=("Helvetica", 16, "bold"), lmargin1=10, lmargin2=10, rmargin=10, spacing1=5,
@@ -280,13 +314,14 @@ chat_box.tag_configure("normal", font=("Helvetica", 16), lmargin1=10, lmargin2=1
 chat_box.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
 # Create entry for typing messages
-entry = tk.Entry(chat_frame, font=("Helvetica", 20))  # Adjust font size here
+entry = tk.Text(chat_frame, bg="white", wrap=tk.WORD, font=("Helvetica", 14),
+                width=int(window_width * 0.3 / 7), height=int(window_height * 0.3 / 20))
 entry.pack(fill=tk.X, padx=10, pady=5)
-entry.bind("<Return>", send_message)  # Bind Enter key to send_message function
+# entry.bind("<Return>", send_message)  # Bind Enter key to send_message function
 
 # Create send button
-send_button = tk.Button(chat_frame, text="Send", command=send_message)
-send_button.pack(pady=5, padx=10)
+send_button = tk.Button(chat_frame, text="Send", command=send_message, font=("Helvetica", 14))
+send_button.pack(fill=tk.BOTH, pady=5, padx=10)
 
 # Configure grid weights to make frames expandable
 root.grid_rowconfigure(0, weight=1)
@@ -296,6 +331,6 @@ root.grid_columnconfigure(2, weight=1)
 
 # Start analyzing emotions from camera
 # threading.Thread(target=analyze_emotions_from_camera).start()
-get_chat_response("", True)
+
 # Run the main loop
 root.mainloop()
