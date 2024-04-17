@@ -22,24 +22,12 @@ load_dotenv()
 def send_message(event=None):
     message = entry.get(1.0, tk.END)
     if message.strip() != "":
-        # chat_box.config(state=tk.NORMAL)
-        # chat_box.insert(tk.END, "You: ", "bold")
-        # chat_box.insert(tk.END, message + "\n", "normal")
-        # entry.delete(1.0, tk.END)
-        # entry.update()
-        # chat_response = get_chat_response(message, False)
-        # chat_box.insert(tk.END, "AI: ", "bold")
-        # chat_box.insert(tk.END, chat_response + "\n", "normal")
-        # chat_box.see(tk.END)
-        # chat_box.config(state=tk.DISABLED)
-        # chat_box.update()
         get_chat_response(message, False)
-        # text_to_speech(chat_response)
 
 
 # Function to update emotion label
 def update_emotion_label(emotion, face_confidence):
-    label_text = f"Dominant Emotion: {emotion}\t\tFace Confidence: {face_confidence}"
+    label_text = f"Face Confidence: {face_confidence}"
     emotion_label.config(text=label_text)
 
 
@@ -121,8 +109,18 @@ def get_chat_response(user_message, is_empty):
             chat_box.config(state=tk.NORMAL)
             chat_box.insert(tk.END, "You: ", "bold")
             chat_box.insert(tk.END, user_message + "\n", "normal")
+            chat_box.see(tk.END)
+            chat_box.config(state=tk.DISABLED)
+            chat_box.update()
+
             entry.delete(1.0, tk.END)
             entry.update()
+
+            start_button.config(state=tk.DISABLED)
+            start_button.update()
+
+            send_button.config(state=tk.DISABLED)
+            send_button.update()
 
         # if isEmpty:
         gpt_response = client.chat.completions.create(
@@ -143,14 +141,31 @@ def get_chat_response(user_message, is_empty):
             chat_box.insert(tk.END, parsed_gpt_response + "\n", "normal")
             chat_box.config(state=tk.DISABLED)
             chat_box.update()
+
+            entry.config(state=tk.NORMAL)
+            entry.update()
+
+            start_button.config(state=tk.NORMAL)
+            start_button.update()
+
+            send_button.config(state=tk.NORMAL)
+            send_button.update()
+
             text_to_speech(parsed_gpt_response)
 
         else:
+            chat_box.config(state=tk.NORMAL)
             chat_box.insert(tk.END, "AI: ", "bold")
             chat_box.insert(tk.END, parsed_gpt_response + "\n", "normal")
             chat_box.see(tk.END)
             chat_box.config(state=tk.DISABLED)
             chat_box.update()
+
+            start_button.config(state=tk.NORMAL)
+            start_button.update()
+
+            send_button.config(state=tk.NORMAL)
+            send_button.update()
 
         load_message("assistant", parsed_gpt_response)
 
@@ -230,12 +245,23 @@ def zoom_out():
 # Start Chat
 def start_chat(business):
     message_text.clear()
+
+    entry.config(state=tk.NORMAL)
     entry.delete(1.0, tk.END)
+    entry.config(state=tk.DISABLED)
     entry.update()
+
     chat_box.config(state=tk.NORMAL)
     chat_box.delete(1.0, tk.END)
     chat_box.config(state=tk.DISABLED)
     chat_box.update()
+
+    start_button.config(state=tk.DISABLED)
+    start_button.update()
+
+    send_button.config(state=tk.DISABLED)
+    send_button.update()
+
     message = load_initial_prompt(business)
     message_text.extend(message)
     get_chat_response("", True)
@@ -298,7 +324,7 @@ middle_frame.grid(row=0, column=1, sticky="nsew")
 # right_frame.grid(row=0, column=2, sticky="nsew")
 
 # Label to display emotions in middle frame
-emotion_label = tk.Label(top_left_frame, text="Dominant Emotion: \t\tFace Confidence:", bg="lightblue", justify="left",
+emotion_label = tk.Label(top_left_frame, text="Face Confidence:", bg="lightblue", justify="left",
                          anchor="nw")
 emotion_label.config(font=("Helvetica", 20))  # Adjust font size and family here
 emotion_label.pack(padx=2, pady=2, fill=tk.BOTH)
@@ -333,11 +359,13 @@ chat_box.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 # Create entry for typing messages
 entry = tk.Text(chat_frame, bg="white", wrap=tk.WORD, font=("Helvetica", 14),
                 width=int(window_width * 0.3 / 7), height=int(window_height * 0.3 / 20))
+entry.config(state=tk.DISABLED)
 entry.pack(fill=tk.X, padx=10, pady=5)
 # entry.bind("<Return>", send_message)  # Bind Enter key to send_message function
 
 # Create send button
 send_button = tk.Button(chat_frame, text="Send", command=send_message, font=("Helvetica", 14))
+send_button.config(state=tk.DISABLED)
 send_button.pack(fill=tk.BOTH, pady=5, padx=10)
 
 # Configure grid weights to make frames expandable
