@@ -1,9 +1,10 @@
 import json
 import os
+import threading
 import time
 import tkinter as tk
 from tkinter import ttk
-import threading
+
 import cv2
 from PIL import Image, ImageTk
 from deepface import DeepFace
@@ -21,16 +22,18 @@ load_dotenv()
 def send_message(event=None):
     message = entry.get(1.0, tk.END)
     if message.strip() != "":
-        chat_box.config(state=tk.NORMAL)
-        chat_box.insert(tk.END, "You: ", "bold")
-        chat_box.insert(tk.END, message + "\n", "normal")
-        entry.delete(1.0, tk.END)
-        entry.update()
-        chat_response = get_chat_response(message, False)
-        chat_box.insert(tk.END, "AI: ", "bold")
-        chat_box.insert(tk.END, chat_response + "\n", "normal")
-        chat_box.config(state=tk.DISABLED)
-        chat_box.update()
+        # chat_box.config(state=tk.NORMAL)
+        # chat_box.insert(tk.END, "You: ", "bold")
+        # chat_box.insert(tk.END, message + "\n", "normal")
+        # entry.delete(1.0, tk.END)
+        # entry.update()
+        # chat_response = get_chat_response(message, False)
+        # chat_box.insert(tk.END, "AI: ", "bold")
+        # chat_box.insert(tk.END, chat_response + "\n", "normal")
+        # chat_box.see(tk.END)
+        # chat_box.config(state=tk.DISABLED)
+        # chat_box.update()
+        get_chat_response(message, False)
         # text_to_speech(chat_response)
 
 
@@ -110,35 +113,49 @@ def analyze_emotions_from_camera():
 
 
 def get_chat_response(user_message, is_empty):
-    messages = message_text
+    def call_open_ai():
+        messages = message_text
 
-    if not is_empty:
-        messages = load_message("user", user_message)
+        if not is_empty:
+            messages = load_message("user", user_message)
+            chat_box.config(state=tk.NORMAL)
+            chat_box.insert(tk.END, "You: ", "bold")
+            chat_box.insert(tk.END, user_message + "\n", "normal")
+            entry.delete(1.0, tk.END)
+            entry.update()
 
-    # if isEmpty:
-    gpt_response = client.chat.completions.create(
-        model="gpt-4",  # model = "deployment_name"
-        messages=messages,
-        temperature=0.7,
-        max_tokens=800,
-        top_p=0.95,
-        frequency_penalty=0,
-        presence_penalty=0,
-        stop=None
-    )
-    parsed_gpt_response = gpt_response.choices[0].message.content
+        # if isEmpty:
+        gpt_response = client.chat.completions.create(
+            model="gpt-4",  # model = "deployment_name"
+            messages=messages,
+            temperature=0.7,
+            max_tokens=800,
+            top_p=0.95,
+            frequency_penalty=0,
+            presence_penalty=0,
+            stop=None
+        )
+        parsed_gpt_response = gpt_response.choices[0].message.content
 
-    if is_empty:
-        chat_box.config(state=tk.NORMAL)
-        chat_box.insert(tk.END, "AI: ", "bold")
-        chat_box.insert(tk.END, parsed_gpt_response + "\n", "normal")
-        chat_box.config(state=tk.DISABLED)
-        chat_box.update()
-        text_to_speech(parsed_gpt_response)
+        if is_empty:
+            chat_box.config(state=tk.NORMAL)
+            chat_box.insert(tk.END, "AI: ", "bold")
+            chat_box.insert(tk.END, parsed_gpt_response + "\n", "normal")
+            chat_box.config(state=tk.DISABLED)
+            chat_box.update()
+            text_to_speech(parsed_gpt_response)
 
-    load_message("assistant", parsed_gpt_response)
+        else:
+            chat_box.insert(tk.END, "AI: ", "bold")
+            chat_box.insert(tk.END, parsed_gpt_response + "\n", "normal")
+            chat_box.see(tk.END)
+            chat_box.config(state=tk.DISABLED)
+            chat_box.update()
 
-    return parsed_gpt_response
+        load_message("assistant", parsed_gpt_response)
+
+    openai_thread = threading.Thread(target=call_open_ai)
+    openai_thread.start()
 
 
 # Function to zoom in on the x-axis
@@ -277,8 +294,8 @@ zoom_indicator.pack(side=tk.BOTTOM, padx=10, pady=5)
 middle_frame = tk.Frame(root, bg="lightblue", width=int(window_width * 0.25), height=window_height)
 middle_frame.grid(row=0, column=1, sticky="nsew")
 
-right_frame = tk.Frame(root, bg="lightgreen", width=int(window_width * 0.25), height=window_height)
-right_frame.grid(row=0, column=2, sticky="nsew")
+# right_frame = tk.Frame(root, bg="lightgreen", width=int(window_width * 0.25), height=window_height)
+# right_frame.grid(row=0, column=2, sticky="nsew")
 
 # Label to display emotions in middle frame
 emotion_label = tk.Label(top_left_frame, text="Dominant Emotion: \t\tFace Confidence:", bg="lightblue", justify="left",
@@ -327,10 +344,10 @@ send_button.pack(fill=tk.BOTH, pady=5, padx=10)
 root.grid_rowconfigure(0, weight=1)
 root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=1)
-root.grid_columnconfigure(2, weight=1)
+# root.grid_columnconfigure(2, weight=1)
 
 # Start analyzing emotions from camera
-# threading.Thread(target=analyze_emotions_from_camera).start()
+threading.Thread(target=analyze_emotions_from_camera).start()
 
 # Run the main loop
 root.mainloop()
